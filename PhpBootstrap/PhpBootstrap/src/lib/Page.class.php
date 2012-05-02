@@ -124,6 +124,15 @@ class Page extends Tag {
 		// link bootstrap
 		$this->_head->addContent(new MetaLink("stylesheet",
 			$_SERVER["PHP_SELF"] . "/bootstrap/less/bootstrap.less"));
-	}	
+	}
+	
+	/**
+	 * 
+	 * Add element
+	 * @param Tag $element
+	 */
+	public function addElement(Tag $element) {
+		$this->_body->addElement($element);
+	}
 }
 ?>
