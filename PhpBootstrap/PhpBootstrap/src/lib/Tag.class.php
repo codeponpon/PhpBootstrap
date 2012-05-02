@@ -10,7 +10,11 @@
  * @version 1.0
  */
 
-namespace Library;
+// Name space of lib PhpBoostrap
+namespace Lib;
+
+// Need Page type for contexte
+require_once 'Page.class.php';
 
 /**
  * 
@@ -30,7 +34,7 @@ class Tag {
 	 */
 	private $_cssProperty;
 	/** 
-	 * @example {"oneclick(){}", ...}
+	 * @example {"oneclick"=>"", ...}
 	 * @var array of string (dict)
 	 */
 	private $_javascript;
@@ -60,6 +64,43 @@ class Tag {
 	
 	
 	/**************************************************************************
+	 * 							PRIVATE STATIC VAR
+	 *************************************************************************/
+	
+	/**
+	 * Page is contexte to add library CSS, js...
+	 * 
+	 * @var Page $_contexte
+	 */
+	private static $_contexte;
+	
+	/**
+	 * Mode for display (fixed or fluid)
+	 * 
+	 * @var int
+	 */
+	private static $_mode;
+	
+	
+	/*************************************************************************
+	 * 							CONSTANTE
+	 ************************************************************************/
+	
+	/**
+	 * Value for $_mode
+	 *
+	 * @var int
+	 */
+	const FLUID = 1;
+	
+	/**
+	 * value for $_mode
+	 * 
+	 * @var int
+	 */
+	const FIXED = 2;
+	
+	/**************************************************************************
 	 * 							Consctructor
 	 *************************************************************************/
 	
@@ -82,75 +123,179 @@ class Tag {
 		if ($name == NULL or !is_string($name)) {
 			throw new \InvalidArgumentException("String is require!");
 		}
-		$this->name = $name;
+		$this->_name = $name;
 		
-		$this->option = $option;
-		$this->content = $content;
-		$this->unitaryTag = $unitaryTag;
-		$this->javascript = $javascript;
-		$this->cssProperty = $cssProperty;
-		$this->textOnly = $textOnly;
+		$this->_option = $option;
+		$this->_content = $content;
+		$this->_unitaryTag = $unitaryTag;
+		$this->_javascript = $javascript;
+		$this->_cssProperty = $cssProperty;
+		$this->_textOnly = $textOnly;
 	}
+	
+	/**************************************************************************
+	 * 								GETTERS
+	 *************************************************************************/
 	
 	/**
 	 * 
 	 * @return string html code
 	 */
 	public function getHtml() {
-		if ($this->textOnly) {
+		if ($this->_textOnly) {
 			return $content;
 		}
 		
-		$html = "<" . $this->name . " ";
+		$html = "<" . $this->_name;
 		$html .= $this->compileCSS();
 		$html .= $this->compileJavascript();
 		$html .= $this->compileOption();
 		
-		if ($this->_unitaryTag)
+		if ($this->_unitaryTag) {
 			return $html . '/>';
+		}
+		
+		$html .= '>';
+		
 		if ($this->_content != NULL) {
 			foreach ($this->_content as $value) {
-				$hmtl .= $value->getHtml();
+				$html .= $value->getHtml();
 			}
 		}
-			
 		return $html . '</' . $this->_name . '>'; 
-		
 	}
 	
+	public final static function getMode() {
+		return self::$_mode;
+	}
+	
+	/**************************************************************************
+	 * 								SETTERS
+	 *************************************************************************/
+	
+	/**
+	 * add Content into Tag
+	 * @example <tag>content<tag>
+	 * 
+	 * @param Tag $content
+	 */
+	public final function addContent(Tag $content) {
+		if ($content == NULL) return;
+		
+		if ($this->_content == NULL) {
+			$this->_content = array($content);
+			return;
+		}
+		
+		$this->_content[count($this->_content)] = $content;
+	}
+	
+	public final function addOption($option) {
+		if ($option == NULL || is_array($option)) return;
+		
+		if($this->_option == NULL) {
+			$this->option = array();
+		}
+		$this->_option = array_merge($this->_option, $option);
+	}
+	
+	/**
+	 * 
+	 * @example entry : ["background-color"=>"white",...]
+	 * @param array $property
+	 */
+	public final function addCSSProperty($property) {
+		if ($property == NULL) return;
+		
+		if (!is_array($property)) {
+			throw \InvalidArgumentException("Property need be array");
+		}
+		
+		if ($this->_cssProperty == NULL) $this->_cssProperty = array();
+		$this->_cssProperty = array_merge($this->_cssProperty, $property);
+	}
+	
+	/**
+	 * 
+	 * @param array $javascript ["onclick"=>'alert("toto!");', ...]
+	 */
+	public final function addJavascript($javascript) {
+		if ($javascript == NULL) return;
+		
+		if (!is_array($javascript)) {
+			throw \InvalidArgumentException("javascript need be array");
+		}
+		
+		if ($this->_javascript == NULL)$this->_javascript = array();
+		$this->_javascript = array_merge($this->_javascript, $javascript);
+	}
+	
+	/**
+	 * 
+	 * change contexte of Tag
+	 * @param Page $contexte
+	 */
+	public static final function setContext(Page $contexte) {
+		Tag::$_contexte = $contexte;
+	}
+	
+	/**************************************************************************
+	 * 						PRIVATE METHODE
+	 *************************************************************************/
+	
+	/**
+	 * Transforms the CSS list into HTML
+	 * 
+	 * @return string contain html code of CSS
+	 * @example of return : style="background-color=white;...;"
+	 */
 	private function compileCSS() {
-		if ($this->_cssProperty == NULL)
+		if ($this->_cssProperty == NULL) {
 			return "";
-		$html = "style=\"";
+		}
+		
+		$html = " style=\"";
 		foreach ($this->_cssProperty as $key => $value) {
 			$html .= $key . '=' . $value . ';';
 		}
-		
-		 return $html . '"';
+		return $html . '"';
 	}
 	
+	/**
+	 * Transforms the javascript list into HTML
+	 * 
+	 * @return string contain js
+	 */
 	private function compileJavascript() {
-		if ($this->_javascript == NULL)
+		if ($this->_javascript == NULL) {
 			return "";
-		$html = "";
+		}
+		
+		$html = " ";
 		foreach ($this->_javascript as $key => $value) {
 			$html .= $key . '="' . $value . '" '; 
 			
 		}
-		
 		return $html;
-		
 	}
 	
+	/**
+	 * 
+	 * Transforms the option list into HTML
+	 * 
+	 * @return string contain html code of option
+	 * @example of return : charset="UTF8"
+	 */
 	private function compileOption() {
-		if ($this->_option == NULL)
-				return "";
-		$html = "";
+		if ($this->_option == NULL) {
+			return "";
+		}
+		
+		$html = " ";
 		foreach ($this->_option as $key => $value) {
 			$html .= $key . '="' . $value . '" '; 	
 		}
 		return $html;
 	}
-}
-
-?>
+	
+} ?>
