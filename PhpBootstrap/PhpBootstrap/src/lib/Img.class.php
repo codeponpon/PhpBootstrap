@@ -12,7 +12,7 @@
  * @version 1.0
  */
 
-namespace Library;
+namespace Lib;
 
 	class Img extends Tag {
 		
